@@ -3,7 +3,6 @@
 Enterprise Microservices, Kubernetes (EKS), and DevSecOps on Jenkins
 
 
-
 Start here: clone this repository before doing anything else.
 
 ---
@@ -60,9 +59,10 @@ By the end of this project, ApexPay's platform will run inside a Kubernetes clus
 - **DevSecOps on Jenkins** — build a Jenkins pipeline that runs an Aqua Trivy security scan before pushing images to ECR and deploying to Kubernetes.
 - **Real domain routing** — register a custom domain and point it at the AWS ALB through Route 53 (DuckDNS does not work for ALB routing).
 - **Full observability** — deploy Prometheus and Grafana via Helm, with Alertmanager sending alerts to Slack or Telegram on 500-level HTTP errors.
+- **Full observability** — deploy Prometheus and Grafana via Helm, with Alertmanager sending alerts to Slack or Telegram on 500-level HTTP errors.
+- **Modular infrastructure as code** — structure all Terraform code using reusable, independent child modules (`modules/vpc`, `modules/rds`, `modules/eks`, `modules/waf`) called by a root orchestrator. Monolithic, single-file Terraform scripts will not pass code review.
 
-**Why this matters:** recruiters and hiring managers look for hands-on experience with Kubernetes (EKS), WAF, and Jenkins pipelines. Completing this project is proof you can handle the security, compliance, and deployment standards expected at large organizations.
-
+**Why this matters:**
 ---
 
 ## 4. Concepts You Need to Know
@@ -97,22 +97,49 @@ By the end of this project, ApexPay's platform will run inside a Kubernetes clus
 
 ## 6. Repository Structure
 
+All Terraform code follows a modular layout: a root orchestrator (`main.tf`) calls independent child modules under `terraform/modules/`, rather than one large monolithic script.
+
 ```
 apexpay-global/
-├── terraform/                   # IaC for 3-Tier VPC, RDS, EKS, WAF
-│   ├── network.tf
-│   ├── eks.tf
-│   └── rds.tf
-├── k8s/                         # Kubernetes manifests
-│   ├── auth-deployment.yaml
-│   ├── ledger-deployment.yaml
-│   ├── frontend-deployment.yaml
-│   └── ingress.yaml
-├── Jenkinsfile                  # Jenkins DevSecOps pipeline
-├── services/                    # Application source code
+├── terraform/
+│   ├── main.tf                     # Root orchestrator: calls child modules
+│   ├── variables.tf                # Global environment inputs (region, project name)
+│   ├── outputs.tf                  # Exports ALB DNS, EKS cluster name, RDS endpoint
+│   ├── terraform.tfvars            # Actual variable assignments (gitignored)
+│   └── modules/
+│       ├── vpc/                    # 3-tier network (public, private, isolated subnets, NAT)
+│       │   ├── main.tf
+│       │   ├── variables.tf
+│       │   └── outputs.tf
+│       ├── rds/                    # PostgreSQL instance in the isolated DB subnet
+│       │   ├── main.tf
+│       │   ├── variables.tf
+│       │   └── outputs.tf
+│       ├── eks/                    # EKS cluster, IAM roles, managed node groups
+│       │   ├── main.tf
+│       │   ├── variables.tf
+│       │   └── outputs.tf
+│       └── waf/                    # AWS WAF v2 WebACL (rate limiting & SQLi rules)
+│           ├── main.tf
+│           ├── variables.tf
+│           └── outputs.tf
+├── k8s/
+│   ├── ingress.yaml                # ALB Ingress routing rules
+│   ├── external-secrets.yaml       # AWS Secrets Manager sync definition
 │   ├── auth-service/
-│   └── ledger-service/
-└── frontend/                    # React SPA
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   ├── ledger-service/
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   └── frontend/
+│       ├── deployment.yaml
+│       └── service.yaml
+├── Jenkinsfile                     # Declarative CI/CD pipeline (build, Trivy scan, push, deploy)
+├── services/
+│   ├── auth-service/                # FastAPI + JWT
+│   └── ledger-service/              # FastAPI + atomic ledger engine
+└── frontend/                        # React 18 + Tailwind CSS dashboard
 ```
 
 ---
