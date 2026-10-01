@@ -1,14 +1,8 @@
 # ApexPay Global
 
-**AMDARI Internship Project**
 Enterprise Microservices, Kubernetes (EKS), and DevSecOps on Jenkins
 
-| | |
-|---|---|
-| Track | DevOps — Advanced Capstone (Final Project) |
-| Duration | Two Weeks |
-| Specialist | God'sfavour Braimah |
-| Repository | [github.com/GfavourBraimah/apexpay-global](https://github.com/GfavourBraimah/apexpay-global) |
+
 
 Start here: clone this repository before doing anything else.
 
